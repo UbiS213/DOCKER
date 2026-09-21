@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  web:
+    image: 127.0.0.1:5000/my-flask-app-web:v1
+    ports:
+      - "8080:5000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+      - APP_ENV=production
+      - SECRET_KEY=supersecretkey
+      - DATABASE_URL=postgresql://user:password@db:5432/mydb
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+
+networks:
+  backend:
+    driver: overlay
+
+volumes:
+  postgres_data:

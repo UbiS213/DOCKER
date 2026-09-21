@@ -1,0 +1,53 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:5000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      FLASK_DEBUG: "0"
+    volumes:
+      - .:/app
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - db
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  postgres_data:
